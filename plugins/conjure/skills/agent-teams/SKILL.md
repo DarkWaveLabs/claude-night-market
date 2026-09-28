@@ -209,7 +209,7 @@ Agent Teams extends the conjure delegation model:
 
 Use `Skill(conjure:delegation-core)` first to determine if the task benefits from multi-agent coordination vs. single-service delegation.
 
-Delegation is on by default there, so the question a team formation
+Delegation is opt-in; once enabled, the question a team formation
 answers is which shape of delegation fits, not whether to delegate.
 A teammate holding execution work delegates it the same way a single
 session would. A teammate holding design work keeps it, under the same

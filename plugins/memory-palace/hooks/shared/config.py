@@ -99,14 +99,14 @@ CONFIG_DEFAULTS: dict[str, Any] = {
     "domains_of_interest": [],
     "tending_frequency": "weekly",
     "telemetry": {
-        "enabled": True,
+        "enabled": False,
         "file": "data/telemetry/memory-palace.csv",
     },
     "feature_flags": {
         "cache_intercept": True,
         "autonomy": True,
         "lifecycle": True,
-        "auto_capture": True,  # Auto-store WebFetch/WebSearch content to queue
+        "auto_capture": False,  # Auto-store WebFetch/WebSearch content to queue
         "context_injection": False,  # Surface promoted captures at SessionStart
     },
 }

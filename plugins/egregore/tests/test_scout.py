@@ -371,6 +371,9 @@ class TestRunScout:
         techniques = run_scout(
             exemplars=exemplars,
             post_to_discussions=True,
+            repo_owner="me",
+            repo_name="repo",
+            category_id="DIC_test",
         )
 
         assert len(techniques) >= 1
@@ -393,6 +396,9 @@ class TestRunScout:
         techniques = run_scout(
             exemplars=exemplars,
             post_to_discussions=True,
+            repo_owner="me",
+            repo_name="repo",
+            category_id="DIC_test",
         )
 
         assert techniques == []

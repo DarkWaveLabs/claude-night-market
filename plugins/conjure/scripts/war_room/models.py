@@ -168,7 +168,9 @@ class ExpertConfig:
     model: str
     description: str
     phases: list[str]
-    dangerous: bool = True
+    # Carries --dangerously-skip-permissions for resolver-built commands.
+    # Off unless an expert sets it: a -p panel expert uses no tools.
+    dangerous: bool = False
     command: list[str] | None = None
     command_resolver: str | None = None
     # Opt-in experts join a panel only when their CLI is installed. Without

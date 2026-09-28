@@ -9,14 +9,18 @@ import pytest
 
 
 @pytest.fixture(autouse=True)
-def _delegation_policy_unset(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Keep a developer's own opt-out out of the test run.
+def _delegation_policy_opted_in(
+    request: pytest.FixtureRequest, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Opt the test run into delegation, which is off by default.
 
-    Delegation reads CONJURE_DELEGATION from the environment, so whoever
-    exported it to decline delegation for their own work would otherwise
-    watch the chain tests fail on a machine where nothing is wrong.
+    Tests marked ``delegation_policy`` exercise the policy itself and see
+    a clean environment instead.
     """
-    monkeypatch.delenv("CONJURE_DELEGATION", raising=False)
+    if request.node.get_closest_marker("delegation_policy"):
+        monkeypatch.delenv("CONJURE_DELEGATION", raising=False)
+    else:
+        monkeypatch.setenv("CONJURE_DELEGATION", "on")
 
 
 @pytest.fixture

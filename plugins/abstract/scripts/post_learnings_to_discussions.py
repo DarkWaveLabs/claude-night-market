@@ -88,7 +88,7 @@ def get_config_dir() -> Path:
 class DiscussionConfig:
     """Configuration for collective intelligence posting."""
 
-    auto_post_learnings: bool = True
+    auto_post_learnings: bool = False
     target_repo: str = ""  # empty = auto-detect from gh repo view
     promotion_threshold: int = 3
     promotion_emoji: str = "\U0001f525"  # fire emoji
@@ -101,7 +101,7 @@ class DiscussionConfig:
             try:
                 data = json.loads(config_path.read_text())
                 return cls(
-                    auto_post_learnings=data.get("auto_post_learnings", True),
+                    auto_post_learnings=data.get("auto_post_learnings", False),
                     target_repo=data.get("target_repo", ""),
                     promotion_threshold=data.get("promotion_threshold", 3),
                     promotion_emoji=data.get("promotion_emoji", "\U0001f525"),

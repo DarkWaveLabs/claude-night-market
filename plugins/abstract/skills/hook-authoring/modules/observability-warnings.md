@@ -66,7 +66,6 @@ hide the per-item judgment the hook surfaced.
 
 | Hook | Reason |
 |------|--------|
-| `leyline/hooks/fetch-recent-discussions.sh` | Lists discussions; users decide which to read or skip |
 | `conserve/hooks/context_warning.py` | Suggests one of several actions (clear, compact, summarize) based on context state |
 | `leyline/hooks/supply_chain_check.py` | Lists dependency advisories; resolution depends on each one |
 

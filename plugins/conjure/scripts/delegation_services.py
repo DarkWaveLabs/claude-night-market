@@ -63,7 +63,7 @@ VERIFIED_BINARIES: dict[str, dict[str, str]] = {
     "muse": {
         "package": "muse-code (standalone installer)",
         "publisher": "Meta",
-        "install": "curl -fsSL https://dev.meta.ai/install.sh | sh",
+        "install": "curl -fsSL -o muse-install.sh https://dev.meta.ai/install.sh",
         "source": "https://dev.meta.ai/docs/muse-code",
     },
     "codex": {
@@ -81,7 +81,7 @@ VERIFIED_BINARIES: dict[str, dict[str, str]] = {
     "ollama": {
         "package": "ollama",
         "publisher": "Ollama",
-        "install": "curl -fsSL https://ollama.com/install.sh | sh",
+        "install": "curl -fsSL -o ollama-install.sh https://ollama.com/install.sh",
         "source": "https://github.com/ollama/ollama",
     },
 }
@@ -333,6 +333,81 @@ def resolve_env_overlay(service: ServiceConfig) -> tuple[dict[str, str], list[st
     return resolved, missing
 
 
+#: Credentials a delegated CLI never needs: the child gets the caller's
+#: environment for PATH and config, but not the keys to other accounts.
+_UNRELATED_SECRETS = frozenset(
+    {
+        "GH_TOKEN",
+        "GITHUB_TOKEN",
+        "GH_ENTERPRISE_TOKEN",
+        "GITLAB_TOKEN",
+        "AWS_ACCESS_KEY_ID",
+        "AWS_SECRET_ACCESS_KEY",
+        "AWS_SESSION_TOKEN",
+        "NPM_TOKEN",
+        "CLOUDFLARE_API_TOKEN",
+        "CLOUDFLARE_API_KEY",
+        "HF_TOKEN",
+        "YDC_API_KEY",
+    }
+)
+
+#: Every LLM-provider credential conjure knows about. A child keeps only the
+#: ones listed for its own service in ``_SERVICE_CREDENTIALS``.
+_PROVIDER_SECRETS = frozenset(
+    {
+        "ANTHROPIC_API_KEY",
+        "ANTHROPIC_AUTH_TOKEN",
+        "CLAUDE_CODE_OAUTH_TOKEN",
+        "OPENAI_API_KEY",
+        "GEMINI_API_KEY",
+        "GOOGLE_API_KEY",
+        "DASHSCOPE_API_KEY",
+        "MINIMAX_API_KEY",
+        "ZAI_API_KEY",
+        "META_API_KEY",
+    }
+)
+
+#: Provider credentials each service may see. glm runs the ``claude`` binary
+#: against api.z.ai, so it must not inherit Anthropic credentials: the
+#: overlay supplies ANTHROPIC_AUTH_TOKEN from ZAI_API_KEY instead. opencode
+#: routes to whichever provider the user configured, so it keeps them all.
+_SERVICE_CREDENTIALS: dict[str, frozenset[str]] = {
+    "gemini": frozenset({"GEMINI_API_KEY", "GOOGLE_API_KEY"}),
+    "qwen": frozenset({"DASHSCOPE_API_KEY", "OPENAI_API_KEY"}),
+    "minimax": frozenset({"MINIMAX_API_KEY"}),
+    "glm": frozenset({"ZAI_API_KEY"}),
+    "muse": frozenset({"META_API_KEY"}),
+    "codex": frozenset({"OPENAI_API_KEY"}),
+    "opencode": _PROVIDER_SECRETS,
+    "glimmer": frozenset(),
+}
+
+
+def child_environment(
+    service: ServiceConfig, overlay: dict[str, str]
+) -> dict[str, str]:
+    """Build a delegated CLI's environment.
+
+    Starts from the caller's environment (a child without PATH cannot start),
+    removes credentials for unrelated accounts and for other LLM providers,
+    then applies the service overlay. A service not in the table, such as a
+    user-configured one, keeps no provider keys beyond its ``auth_env_var``.
+    """
+    allowed = set(_SERVICE_CREDENTIALS.get(service.name, frozenset()))
+    if service.auth_env_var:
+        allowed.add(service.auth_env_var)
+    env = {
+        key: value
+        for key, value in os.environ.items()
+        if key not in _UNRELATED_SECRETS
+        and (key not in _PROVIDER_SECRETS or key in allowed)
+    }
+    env.update(overlay)
+    return env
+
+
 SERVICES: dict[str, ServiceConfig] = {
     "gemini": ServiceConfig(
         name="gemini",
@@ -466,7 +541,7 @@ SERVICES: dict[str, ServiceConfig] = {
         output_format_is_boolean=True,
         inline_files=True,
         auth_probe=(),
-        install_hint="curl -fsSL https://dev.meta.ai/install.sh | sh",
+        install_hint="download https://dev.meta.ai/install.sh, review it, then run: sh install.sh",
         priority=50,
         strengths=("code_execution", "large_context"),
     ),
@@ -543,7 +618,7 @@ SERVICES: dict[str, ServiceConfig] = {
         stdin_prompt=True,
         auth_probe=(),
         install_hint=(
-            "curl -fsSL https://ollama.com/install.sh | sh "
+            "download https://ollama.com/install.sh, review it, run sh install.sh "
             "&& ollama pull muse-glimmer:30b"
         ),
         readiness_probe=("list",),

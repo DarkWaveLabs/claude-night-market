@@ -58,7 +58,9 @@ the documented install is a script served from Meta's own domain.
 ### Installation
 
 ```bash
-curl -fsSL https://dev.meta.ai/install.sh | sh
+curl -fsSL -o muse-install.sh https://dev.meta.ai/install.sh
+less muse-install.sh   # review before running
+sh muse-install.sh
 ```
 
 This pipes a remote script into a shell. Read

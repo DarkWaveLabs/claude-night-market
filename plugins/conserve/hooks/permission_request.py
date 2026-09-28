@@ -108,7 +108,7 @@ SAFE_PATTERNS: list[str] = [
     r"^realpath\s+",
     r"^dirname\s+",
     r"^basename\s+",
-    # Search operations (read-only)
+    # Search operations (read-only; see _UNSAFE_ARGS for excluded flags)
     r"^grep\s+",
     r"^rg\s+",
     r"^ag\s+",
@@ -121,20 +121,18 @@ SAFE_PATTERNS: list[str] = [
     r"^git\s+status(\s|$)",
     r"^git\s+log(\s|$)",
     r"^git\s+diff(\s|$)",
-    r"^git\s+branch(\s|$)",
+    # Listing forms only: -d/-D/-m/-f/-c mutate branches
+    r"^git\s+branch(\s+(-a|-r|-v|-vv|--all|--remotes|--list|--show-current))*$",
     r"^git\s+show(\s|$)",
     r"^git\s+remote\s+-v$",
     r"^git\s+rev-parse(\s|$)",
     r"^git\s+describe(\s|$)",
-    # Help commands
-    r"^man\s+",
-    r".*--help$",
-    r".*-h$",
-    r"^help\s+",
-    # Environment inspection
-    r"^env$",
-    r"^printenv(\s|$)",
-    r"^echo\s+\$",
+    # Help commands. A generic "<anything> --help" rule is deliberately absent:
+    # it executes the named program (``python3 -c ... -h``, and ``pytest
+    # --help`` imports conftest.py), so it approved arbitrary code.
+    r"^man\s+(\d\s+)?[\w.+-]+$",
+    # Environment inspection (env/printenv/echo $VAR) is deliberately absent:
+    # it prints secrets into the transcript.
     # Python/Node read operations
     r"^python\s+--version$",
     r"^python3\s+--version$",
@@ -173,7 +171,20 @@ def check_dangerous(command: str) -> Decision | None:
 # ``re.match``, which anchors only at the start, and ``^ls(\s|$)`` accepts a
 # newline through ``\s``. ``ls\nrm -rf ./important_dir`` therefore
 # auto-approved on the strength of its first token.
-_CHAIN_CHARS = re.compile(r"[;|&`(\n\r]|\$\(")
+#
+# Redirection (``<`` / ``>``) is excluded for the same reason: ``cat x >
+# ~/.zshrc`` has a safe first token and overwrites a file.
+_CHAIN_CHARS = re.compile(r"[;|&`(<>\n\r]|\$\(")
+
+# Flags that turn an otherwise read-only command into one that executes,
+# deletes, or writes: find's -exec/-delete/-fprint family, rg --pre, ag
+# --pager, git --output/--ext-diff/--textconv, and git's -c config override.
+_UNSAFE_ARGS = re.compile(
+    r"(?:^|\s)(?:(?:-exec|-execdir|-ok|-okdir|-delete|-fprint0?|-fprintf|-fls"
+    r"|--pre|--pre-glob|--pager|--output|--ext-diff|--textconv)(?:[=\s]|$)"
+    r"|-c\s+\S+=)",
+    re.IGNORECASE,
+)
 
 
 def check_safe(command: str) -> Decision | None:
@@ -196,6 +207,10 @@ def check_safe(command: str) -> Decision | None:
 
     # Commands with chaining/substitution never get auto-approved
     if _CHAIN_CHARS.search(candidate):
+        return None
+
+    # Execute/write flags never get auto-approved either
+    if _UNSAFE_ARGS.search(candidate):
         return None
 
     for pattern in SAFE_PATTERNS:

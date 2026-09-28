@@ -55,7 +55,7 @@ jobs:
     outputs:
       plugins: ${{ steps.list.outputs.plugins }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: List plugins that have a tests directory
         id: list
@@ -87,15 +87,15 @@ jobs:
       matrix:
         plugin: ${{ fromJSON(needs.discover.outputs.plugins) }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Set up Python
-        uses: actions/setup-python@v7.0.0
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.12"
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v10.0.1
+        uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
 
       # pensive's shell-review suite is the only automated shellcheck and
       # shfmt gate in the repository, and its pattern-detection tests
@@ -109,6 +109,8 @@ jobs:
           sudo apt-get install -y shellcheck ripgrep
           curl -fsSL -o /tmp/shfmt \
             https://github.com/mvdan/sh/releases/download/v3.10.0/shfmt_v3.10.0_linux_amd64
+          # sha256 from the release's sha256sums.txt
+          echo "1f57a384d59542f8fac5f503da1f3ea44242f46dff969569e80b524d64b71dbc  /tmp/shfmt" | sha256sum -c -
           sudo install -m 0755 /tmp/shfmt /usr/local/bin/shfmt
           shellcheck --version
           shfmt --version

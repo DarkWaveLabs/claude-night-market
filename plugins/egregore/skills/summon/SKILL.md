@@ -224,8 +224,8 @@ See `modules/intake.md` for details.
 
 ### Delegation Inside the Loop
 
-The build and quality stages delegate execution by default through
-`Skill(conjure:delegation-core)`.
+When delegation is opted in, the build and quality stages delegate
+execution through `Skill(conjure:delegation-core)`.
 An unattended loop is where the default earns most: nobody is present to
 notice that an external CLI was available and unused.
 

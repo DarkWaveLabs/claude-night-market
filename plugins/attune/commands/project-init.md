@@ -196,7 +196,7 @@ chmod +x plugins/attune/scripts/attune_init.py
 
 **Missing uv command** (for Python projects):
 ```bash
-curl -LsSf https://astral.sh/uv/install.sh | sh
+brew install uv (or pipx install uv)
 ```
 
 ## Related Commands

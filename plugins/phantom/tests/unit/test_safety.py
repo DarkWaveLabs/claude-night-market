@@ -8,14 +8,61 @@ Feature: Safety Controls
 
 from __future__ import annotations
 
+import pytest
+
 from phantom.safety import (
+    UNATTENDED_ENV,
     ActionFilter,
     ConfirmationGate,
     SafetyConfig,
     always_confirm,
     confirm_clicks_only,
+    default_confirm_callback,
     no_confirm,
+    terminal_confirm,
 )
+
+
+class TestDefaultGate:
+    """Feature: The loop prompts before side effects unless opted out."""
+
+    def test_default_is_terminal_prompt(self, monkeypatch: pytest.MonkeyPatch):
+        monkeypatch.delenv(UNATTENDED_ENV, raising=False)
+        assert default_confirm_callback() is terminal_confirm
+
+    def test_unattended_opt_in_disables_prompt(
+        self, monkeypatch: pytest.MonkeyPatch
+    ):
+        monkeypatch.setenv(UNATTENDED_ENV, "1")
+        assert default_confirm_callback() is no_confirm
+
+    def test_read_only_actions_pass_without_prompt(
+        self, monkeypatch: pytest.MonkeyPatch
+    ):
+        monkeypatch.setattr("sys.stdin.isatty", lambda: False)
+        assert terminal_confirm({"action": "screenshot"}) is True
+
+    @pytest.mark.parametrize(
+        "action",
+        [
+            {"action": "left_click", "coordinate": [1, 1]},
+            {"action": "type", "text": "hello"},
+            {"tool": "bash", "command": "ls"},
+            {"tool": "str_replace_based_edit_tool", "command": "create"},
+        ],
+    )
+    def test_side_effects_rejected_without_terminal(
+        self, monkeypatch: pytest.MonkeyPatch, action
+    ):
+        monkeypatch.setattr("sys.stdin.isatty", lambda: False)
+        assert terminal_confirm(action) is False
+
+    def test_bash_needs_explicit_yes(self, monkeypatch: pytest.MonkeyPatch):
+        monkeypatch.setattr("sys.stdin.isatty", lambda: True)
+        monkeypatch.setattr("builtins.input", lambda _prompt: "")
+        assert terminal_confirm({"tool": "bash", "command": "ls"}) is False
+        monkeypatch.setattr("builtins.input", lambda _prompt: "y")
+        assert terminal_confirm({"tool": "bash", "command": "ls"}) is True
 
 
 class TestSafetyConfig:

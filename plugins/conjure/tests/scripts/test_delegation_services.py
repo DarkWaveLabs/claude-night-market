@@ -22,6 +22,7 @@ from delegation_services import (  # noqa: E402 - sys.path set above
     _apply_overrides,
     _expired_credentials,
     _smart_delegate_model,
+    child_environment,
     credential_file_issues,
     credential_issues,
     resolve_env_overlay,
@@ -35,6 +36,54 @@ _BASE = ServiceConfig(
 def _api_key_service(**overrides: Any) -> ServiceConfig:
     """Vary one API-key provider without restating its required fields."""
     return replace(_BASE, **overrides)
+
+
+
+class TestChildEnvironment:
+    """Feature: a delegated CLI only sees its own provider's credentials."""
+
+    _SECRETS = {
+        "ANTHROPIC_API_KEY": "sk-ant",
+        "OPENAI_API_KEY": "sk-oai",
+        "ZAI_API_KEY": "zai",
+        "GH_TOKEN": "gho",
+        "AWS_SECRET_ACCESS_KEY": "aws",
+        "PATH": "/usr/bin",
+    }
+
+    def _env(
+        self, monkeypatch: pytest.MonkeyPatch, service: ServiceConfig
+    ) -> dict:
+        for key, value in self._SECRETS.items():
+            monkeypatch.setenv(key, value)
+        return child_environment(service, {"OVERLAY": "1"})
+
+    def test_glm_does_not_receive_anthropic_key(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        glm = _api_key_service(name="glm", auth_env_var="ZAI_API_KEY")
+        env = self._env(monkeypatch, glm)
+        assert "ANTHROPIC_API_KEY" not in env
+        assert "OPENAI_API_KEY" not in env
+        assert env["ZAI_API_KEY"] == "zai"
+
+    def test_codex_keeps_only_openai_key(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        codex = _api_key_service(name="codex", auth_env_var=None)
+        env = self._env(monkeypatch, codex)
+        assert env["OPENAI_API_KEY"] == "sk-oai"
+        assert "ANTHROPIC_API_KEY" not in env
+
+    def test_unrelated_secrets_always_removed(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        opencode = _api_key_service(name="opencode", auth_env_var=None)
+        env = self._env(monkeypatch, opencode)
+        assert "GH_TOKEN" not in env
+        assert "AWS_SECRET_ACCESS_KEY" not in env
+        assert env["PATH"] == "/usr/bin"
+        assert env["OVERLAY"] == "1"
 
 
 class TestCredentialIssues:

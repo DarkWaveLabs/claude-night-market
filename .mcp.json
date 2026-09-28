@@ -3,7 +3,7 @@
     "markitdown": {
       "type": "stdio",
       "command": "uvx",
-      "args": ["markitdown-mcp"]
+      "args": ["markitdown-mcp==0.0.1a7"]
     }
   }
 }

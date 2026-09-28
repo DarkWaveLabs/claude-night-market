@@ -112,9 +112,9 @@ done
 
 **ttyd not found**
 ```bash
-# Install ttyd
-go install github.com/aspect-build/aspect-cli/pkg/ttyd@latest
-# Or via package manager
+# Install ttyd (https://github.com/tsl0922/ttyd)
+brew install ttyd        # macOS
+sudo apt install ttyd    # Debian/Ubuntu
 ```
 
 **ffmpeg errors**

@@ -8,7 +8,7 @@ Merges functionality from:
 - web_content_processor.py: Safety checks, dedup, auto-capture storage
 - research_storage_prompt.py: Lightweight storage reminder prompts
 
-This hook captures research results when auto_capture is enabled (default: true).
+This hook captures research results when auto_capture is enabled (default: false).
 When auto-capture is disabled or fails, it prompts the user to store findings.
 """
 
@@ -956,7 +956,7 @@ def main() -> None:
     if not feature_flags.get("lifecycle", True):
         sys.exit(0)
 
-    auto_capture = feature_flags.get("auto_capture", True)
+    auto_capture = feature_flags.get("auto_capture", False)
     query = tool_input.get("query", "") or tool_input.get("prompt", "")
     intake_already_pending = query and _recent_intake_pending(query)
 

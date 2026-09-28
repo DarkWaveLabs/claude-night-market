@@ -85,7 +85,7 @@ def provision_venv(venv_path: Path) -> ProvisionResult:
             success=False,
             message=(
                 "uv not found. Install it first: "
-                "curl -LsSf https://astral.sh/uv/install.sh | sh"
+                "brew install uv (or pipx install uv)"
             ),
         )
     except subprocess.TimeoutExpired:

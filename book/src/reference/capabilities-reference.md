@@ -463,14 +463,12 @@ A workflow only runs when it is asked for. None starts implicitly.
 | Hook | Plugin | Type | Description |
 |------|--------|------|-------------|
 | `aggregate_learnings_daily.py` | abstract | UserPromptSubmit | Daily learning aggregation (24h cadence) with severity-based issue creation |
-| `auto-star-repo.sh` | leyline | SessionStart | Auto-star the repo if not already starred |
 | `config_change_audit.py` | sanctum | ConfigChange | Audit configuration changes |
 | `context_warning.py` | conserve | PreToolUse | Context utilization monitoring |
 | `daemon_lifecycle.py` | oracle | SessionStart, Stop | Oracle daemon lifecycle management |
 | `deferred_item_sweep.py` | sanctum | Stop | Sweep session ledger and file deferred items as GitHub issues |
 | `deferred_item_watcher.py` | sanctum | PostToolUse | Detect deferred items in Skill output and write to session ledger |
 | `detect-git-platform.sh` | leyline | SessionStart | Detect git forge platform from remote URL |
-| `fetch-recent-discussions.sh` | leyline | SessionStart | Fetch recent GitHub Discussions |
 | `graph_auto_update.py` | gauntlet | PostToolUse | Auto-update code graph after git commits |
 | `graph_community_refresh.py` | cartograph | PostToolUse | Refresh community detection after graph builds |
 | `homeostatic_monitor.py` | abstract | PostToolUse | Stability gap monitoring, queues degrading skills for improvement |

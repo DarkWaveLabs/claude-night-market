@@ -160,9 +160,10 @@ Sessions persist to the **Strategeion** (War Palace):
 Experts are invoked via conjure delegation:
 - `conjure:gemini-delegation` for Gemini models
 - `conjure:qwen-delegation` for Qwen models
-- Direct CLI for GLM-5.2 (`ccgd` or `claude-glm --dangerously-skip-permissions`)
+- Direct CLI for GLM-5.2 (`ccgd` or `claude-glm`). Permission prompts stay on; a
+  `-p` panel expert only answers, so it needs no tool approvals
 
-Delegation being on by default changes nothing here, because a War Room
+Delegation's opt-in switch still applies here, because a War Room
 delegates by construction: a panel is external models or it is not a
 panel.
 

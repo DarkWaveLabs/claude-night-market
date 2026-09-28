@@ -147,7 +147,7 @@ This is the **final phase** of the attune workflow. No auto-continuation occurs 
 ### Delegation Check (First, Per Task)
 
 Before implementing a task, delegate it.
-`Skill(conjure:delegation-core)` is on by default, so the decision to
+When `Skill(conjure:delegation-core)` is opted in, the decision to
 make is whether a Keep Local clause holds, not whether to bother.
 
 Keep the task local when it is design or trade-off work, when its

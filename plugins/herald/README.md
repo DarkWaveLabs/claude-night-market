@@ -53,6 +53,7 @@ alert(
 
 Herald registers a `Stop` hook, `double-shot-latte`, that decides
 whether Claude has more autonomous work to do when a turn ends.
+It is off until you set `DOUBLE_SHOT_LATTE=1`.
 It reads the last assistant message and continues only on an
 explicit statement of intent to keep working.
 A question, a handoff, or a completion signal lets the turn stop.
@@ -70,6 +71,7 @@ rather than re-tripping the limit.
 
 | Variable | Default | Effect |
 |----------|---------|--------|
+| `DOUBLE_SHOT_LATTE` | unset | Set to `1` to turn the judge on. Unset, every stop is allowed. |
 | `DOUBLE_SHOT_LATTE_MAX_CONTINUATIONS` | `10` | Auto-continue cycles allowed in the window before a check-in. A non-positive-integer value falls back to the default. |
 | `DOUBLE_SHOT_LATTE_LLM` | unset | Set to `1` to consult an LLM as a tiebreaker on ambiguous turns. |
 | `DOUBLE_SHOT_LATTE_MODEL` | `haiku` | Model used for the optional LLM tiebreaker. |

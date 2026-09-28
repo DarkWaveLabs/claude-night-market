@@ -47,12 +47,13 @@ fi
 CLAWHUB=""
 if command -v clawhub &>/dev/null; then
   CLAWHUB="clawhub"
-elif command -v npx &>/dev/null && npx clawhub --help &>/dev/null 2>&1; then
-  CLAWHUB="npx clawhub"
+# --no-install: use a locally installed clawhub, never fetch one from npm
+elif command -v npx &>/dev/null && npx --no-install clawhub --help &>/dev/null 2>&1; then
+  CLAWHUB="npx --no-install clawhub"
 else
   echo "Error: clawhub CLI not found."
   echo "Install: npm install -g clawhub"
-  echo "    or: curl -fsSL https://clawhub.dev/install.sh | sh"
+  echo "    or: download https://clawhub.dev/install.sh, review it, then run it"
   exit 1
 fi
 

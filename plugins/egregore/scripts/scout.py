@@ -317,9 +317,12 @@ def format_discussion_body(
 
 
 _GH_CLI = "gh"
-_DEFAULT_DISCUSSION_CATEGORY_ID = "DIC_kwDOQbN88M4C2zJv"  # Knowledge
-_DEFAULT_REPO_OWNER = "athola"
-_DEFAULT_REPO_NAME = "claude-night-market"
+# No default target: posting uses the caller's gh login, so the repo and its
+# Discussion category ID must be named explicitly. The upstream defaults
+# pointed at athola/claude-night-market.
+_DEFAULT_DISCUSSION_CATEGORY_ID = ""
+_DEFAULT_REPO_OWNER = ""
+_DEFAULT_REPO_NAME = ""
 
 
 def fetch_contributing_guide(
@@ -428,7 +431,7 @@ def post_discussion(
 
 def run_scout(
     exemplars: list[ExemplarProject] | None = None,
-    post_to_discussions: bool = True,
+    post_to_discussions: bool = False,
     category_id: str = _DEFAULT_DISCUSSION_CATEGORY_ID,
     repo_owner: str = _DEFAULT_REPO_OWNER,
     repo_name: str = _DEFAULT_REPO_NAME,
@@ -442,6 +445,11 @@ def run_scout(
 
     Returns all discovered techniques.
     """
+    if post_to_discussions and not (repo_owner and repo_name and category_id):
+        raise ValueError(
+            "post_to_discussions needs repo_owner, repo_name and category_id"
+        )
+
     if exemplars is None:
         exemplars = default_exemplars()
 

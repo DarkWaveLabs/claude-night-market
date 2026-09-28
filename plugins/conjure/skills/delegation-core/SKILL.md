@@ -54,10 +54,11 @@ A method for deciding when and how to delegate tasks to external LLM services. C
 
 ## Default Posture
 
-**Delegation is on. Declining it is the step that takes a decision.**
+**Delegation is off until the operator opts in.** It sends prompts and
+inlined files to third-party LLM CLIs.
 
-Any conjure operation, mission phase, or workflow that reaches eligible
-work delegates it without being asked.
+Once opted in, a conjure operation, mission phase, or workflow that
+reaches eligible work delegates it.
 Eligible means the work is execution rather than reasoning, which the
 philosophy below defines and `modules/task-assessment.md` classifies.
 An operator who wants delegation off says so once, in one of the two
@@ -81,9 +82,10 @@ Keep the work local when any of these hold:
 The first is the standing exception and covers most of what Claude does.
 The rest are the red flags `modules/task-assessment.md` already lists.
 
-## Declining Delegation
+## Enabling or Declining Delegation
 
-Two switches, environment over file.
+Two switches, environment over file. Opt in with `CONJURE_DELEGATION=on`
+or `"enabled": true` in the config file.
 
 | Scope | How | Effect |
 |-------|-----|--------|
@@ -92,8 +94,8 @@ Two switches, environment over file.
 
 `CONJURE_DELEGATION` accepts `off`, `0`, `false`, `no` and their
 opposites, in any case.
-Setting it to an on spelling re-enables delegation that the config file
-turned off, so the narrower scope wins.
+Setting it to an on spelling enables delegation even when the config file
+says otherwise, so the narrower scope wins.
 A disabled delegator returns a result whose `fallback_reason` is
 `delegation_disabled` and spawns nothing, so opting out costs nothing.
 

@@ -8,11 +8,11 @@ code that spawns a delegation. This module spawns only probes.
 
 from __future__ import annotations
 
-import os
 import subprocess  # nosec B404
 
 from scripts.delegation_services import (
     ServiceConfig,
+    child_environment,
     credential_issues,
     resolve_env_overlay,
 )
@@ -47,7 +47,7 @@ def verify_service(service: ServiceConfig) -> tuple[bool, list[str]]:
     if issues:
         return False, issues
 
-    child_env = {**os.environ, **overlay}
+    child_env = child_environment(service, overlay)
 
     # Check command availability with the service's own probe. Not every
     # CLI answers --version, so the argv comes from the config.

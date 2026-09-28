@@ -45,6 +45,9 @@ try:
         run_auto_promote as _promote,
     )
     from post_learnings_to_discussions import (
+        DiscussionConfig as _DiscussionConfig,
+    )
+    from post_learnings_to_discussions import (
         post_learnings as _post_learnings,
     )
 
@@ -83,6 +86,19 @@ def _learnings_have_content() -> bool:
         return False
 
 
+def _posting_enabled() -> bool:
+    """Check the user's opt-in before any GitHub write.
+
+    Every path below creates Issues or Discussions with the user's gh
+    login in whatever repo the session runs in, so all of them share the
+    ``auto_post_learnings`` opt-in (default off) from
+    ``~/.claude/skills/discussions/config.json``.
+    ``DiscussionConfig.load`` already falls back to the defaults on a
+    missing or malformed file, so a config error resolves to off.
+    """
+    return bool(_DiscussionConfig.load().auto_post_learnings)
+
+
 def main() -> None:
     """Stop-hook entry point: promote and post learnings."""
     # Read and discard stdin (hook protocol sends JSON payload)
@@ -93,7 +109,9 @@ def main() -> None:
     except (json.JSONDecodeError, ValueError, OSError, EOFError):
         pass  # Hook protocol: stdin may be empty, closed, or malformed
 
-    if not _HAS_SCRIPTS or not _learnings_have_content():
+    if not _HAS_SCRIPTS or not _posting_enabled():
+        return
+    if not _learnings_have_content():
         return
 
     # Auto-promote high-severity items to Issues

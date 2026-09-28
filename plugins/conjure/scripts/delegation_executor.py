@@ -41,6 +41,7 @@ from scripts.delegation_services import (
     _missing_required_fields,
     _smart_delegate_model,
     credential_file_issues,
+    child_environment,
     credential_issues,
     resolve_env_overlay,
 )
@@ -78,10 +79,11 @@ __all__ = [
 logger = logging.getLogger(__name__)
 
 
-# Delegation is on unless someone says otherwise. The environment variable
-# is read at Delegator construction and overrides the config file, so the
-# narrower scope wins: an operator can decline delegation for one command
-# without editing a file they then have to remember to edit back.
+# Delegation is OFF unless the operator opts in, because it ships prompts and
+# inlined source to third-party LLM CLIs. Opt in with CONJURE_DELEGATION=on
+# or "enabled": true in the config file. The environment variable is read at
+# Delegator construction and overrides the config file, so the narrower
+# scope wins.
 
 DELEGATION_ENV_VAR = "CONJURE_DELEGATION"
 _ENV_OFF_VALUES = frozenset({"0", "off", "false", "no"})
@@ -184,12 +186,13 @@ class Delegator:
         # Per-instance copy to avoid mutating class-level default
         self.services = dict(self.SERVICES)
 
-        # Delegation is on until something turns it off. Resolved once here
+        # Delegation is off until the operator opts in. Resolved once here
         # rather than per call so that a disabled delegator costs nothing:
         # the caller learns the answer without a provider being probed.
-        self.delegation_enabled = True
+        self.delegation_enabled = False
         self.delegation_off_reason: str | None = None
         self._config_off_reason: str | None = None
+        self._config_opt_in = False
 
         # Load custom configurations
         self.load_configurations()
@@ -223,6 +226,18 @@ class Delegator:
         if self._config_off_reason is not None:
             self.delegation_enabled = False
             self.delegation_off_reason = self._config_off_reason
+            return
+
+        if self._config_opt_in:
+            self.delegation_enabled = True
+            self.delegation_off_reason = None
+            return
+
+        self.delegation_enabled = False
+        self.delegation_off_reason = (
+            f"off by default; set {DELEGATION_ENV_VAR}=on or "
+            f'"enabled": true in {self.config_file} to opt in'
+        )
 
     def _read_config(self) -> dict[str, Any] | None:
         """Parse the config file. ``None`` means there is no config file.
@@ -245,8 +260,8 @@ class Delegator:
     def load_configurations(self) -> None:
         """Load custom service configurations from config file.
 
-        A config that cannot be read fails closed. Delegation is on by
-        default, so treating an unparseable file as saying nothing would
+        A config that cannot be read fails closed. Delegation is opt-in,
+        and treating an unparseable file as saying nothing would
         let a single trailing comma undo the operator's opt-out and ship
         prompts, and up to 96 KiB of inlined source, to an external CLI.
         The error is reported at ``error`` because the previous ``debug``
@@ -269,10 +284,12 @@ class Delegator:
         if custom_config is None:
             return
 
-        # Absent means on. Only an explicit false opts out, so a config
-        # file written for some other key cannot turn delegation off as a
+        # Absent means off. Only an explicit true opts in, so a config
+        # file written for some other key cannot turn delegation on as a
         # side effect.
-        if custom_config.get("enabled") is False:
+        if custom_config.get("enabled") is True:
+            self._config_opt_in = True
+        elif custom_config.get("enabled") is False:
             self._config_off_reason = f'"enabled": false in config {self.config_file}'
 
         # Merge custom configurations
@@ -461,9 +478,10 @@ class Delegator:
                 files=files,
                 timeout=timeout,
                 start_time=start_time,
-                # Extend the caller's environment rather than replacing it: a
-                # child spawned with only the overlay would lose PATH.
-                env={**os.environ, **overlay},
+                # Extend the caller's environment rather than replacing it (a
+                # child spawned with only the overlay would lose PATH), minus
+                # credentials for other accounts and providers.
+                env=child_environment(service, overlay),
                 stdin_input=delivered if service.stdin_prompt else None,
             )
         )
@@ -589,7 +607,7 @@ class Delegator:
 
         Returns the answering provider's result, or a result carrying a
         ``fallback_reason`` and the trail of what each provider did. It
-        does not raise on an empty chain: with delegation on by default,
+        does not raise on an empty chain: for an operator who opted in,
         an operator who has installed no CLI is the ordinary case rather
         than the exceptional one, and a traceback is the wrong shape for a
         state the caller recovers from by doing the work itself.
@@ -611,7 +629,7 @@ class Delegator:
             # A caller that already knows a service is up says so, and is
             # taken at its word. Probing it anyway would spend a subprocess
             # to re-learn what the caller just said, on every task, now that
-            # delegation runs by default.
+            # delegation is opted in.
             if not requirements.get(f"{service_name}_available"):
                 is_available, problems = self.verify_service(service_name)
                 if not is_available:

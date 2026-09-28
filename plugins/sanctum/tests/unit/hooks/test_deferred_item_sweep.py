@@ -235,12 +235,39 @@ class TestGetLedgerPath:
 class TestMainFunction:
     """Test the main() entry point orchestration."""
 
+    def test_main_files_nothing_without_opt_in(
+        self,
+        tmp_path: Path,
+        capsys: pytest.CaptureFixture[str],
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """main() keeps the ledger and makes no gh call unless opted in."""
+        from deferred_item_sweep import AUTO_FILE_ENV, main
+
+        monkeypatch.delenv(AUTO_FILE_ENV, raising=False)
+        ledger = tmp_path / "deferred-items-session.json"
+        ledger.write_text(
+            json.dumps([{"title": "Test", "source": "test", "filed": False}])
+        )
+        with (
+            patch("deferred_item_sweep.get_ledger_path", return_value=ledger),
+            patch("deferred_item_sweep.call_capture_script") as mock_capture,
+        ):
+            main()
+        mock_capture.assert_not_called()
+        assert ledger.exists()
+        assert "auto-filing is off" in capsys.readouterr().err
+
     def test_main_prints_summary_when_items_filed(
-        self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+        self,
+        tmp_path: Path,
+        capsys: pytest.CaptureFixture[str],
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """main() writes a summary to stderr when items are filed."""
-        from deferred_item_sweep import main
+        from deferred_item_sweep import AUTO_FILE_ENV, main
 
+        monkeypatch.setenv(AUTO_FILE_ENV, "1")
         ledger = tmp_path / "deferred-items-session.json"
         ledger.write_text(
             json.dumps([{"title": "Test", "source": "test", "filed": False}])

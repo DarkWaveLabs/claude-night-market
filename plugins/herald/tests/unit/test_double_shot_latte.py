@@ -718,3 +718,21 @@ class TestConfigurableContinuationLimit:
             now=1001.0,
         )
         assert out["decision"] == "block"
+
+
+class TestOptIn:
+    """Feature: the judge is off unless DOUBLE_SHOT_LATTE=1."""
+
+    def test_main_allows_stop_when_disabled(self, monkeypatch, capsys):
+        """A continuing transcript still stops when the judge is not enabled."""
+        import io
+
+        monkeypatch.delenv(dsl.ENABLE_ENV, raising=False)
+        monkeypatch.setattr("sys.stdin", io.StringIO('{"session_id": "s1"}'))
+        monkeypatch.setattr(
+            dsl, "decide", lambda *a, **k: pytest.fail("judge ran while disabled")
+        )
+        with pytest.raises(SystemExit) as exc:
+            dsl.main()
+        assert exc.value.code == 0
+        assert json.loads(capsys.readouterr().out)["decision"] == "approve"

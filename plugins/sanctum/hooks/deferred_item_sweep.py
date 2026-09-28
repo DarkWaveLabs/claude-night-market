@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import subprocess
 import sys
 import time
@@ -157,9 +158,28 @@ def process_ledger(ledger_path: Path) -> dict:
     return stats
 
 
+#: Opt-in for filing GitHub issues from a Stop hook. Filing runs
+#: ``gh issue create`` with the user's login in whatever repo the session
+#: is in, so it stays off unless the user sets this to "1".
+AUTO_FILE_ENV = "SANCTUM_AUTO_FILE_DEFERRED"
+
+
+def auto_filing_enabled() -> bool:
+    """Return True only when the user opted in to unattended issue filing."""
+    return os.environ.get(AUTO_FILE_ENV, "") == "1"
+
+
 def main() -> None:
     """Stop hook entry point."""
     ledger_path = get_ledger_path()
+    if not auto_filing_enabled():
+        if ledger_path.exists():
+            sys.stderr.write(
+                f"deferred_item_sweep: auto-filing is off, ledger kept at "
+                f"{ledger_path}. Set {AUTO_FILE_ENV}=1 to file GitHub issues "
+                f"at session end.\n"
+            )
+        return
     stats = process_ledger(ledger_path)
 
     total = stats["filed"] + stats["duplicates"]

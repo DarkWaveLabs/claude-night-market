@@ -634,27 +634,12 @@ Logs skill executions for metrics.
 
 ## Leyline Hooks
 
-### `auto-star-repo.sh`
-**Type**: SessionStart
-
-Auto-stars the repository if not already starred.
-
 ### `detect-git-platform.sh`
 **Type**: SessionStart
 
 Detects the git hosting platform (GitHub, GitLab,
 Bitbucket) and sets session context variables used by downstream skills
 and hooks.
-
-### `fetch-recent-discussions.sh`
-**Type**: SessionStart
-**Timeout**: 3 seconds
-
-Queries the 5 most recent "Decisions" discussions from GitHub Discussions
-and injects a summary into session context.
-Enables cross-session discovery of prior deliberations.
-Skips silently when `gh` CLI is unavailable, unauthenticated,
-or the repository lacks Discussions. Token budget: <600 tokens.
 
 ### `noqa_guard.py`
 **Type**: PreToolUse

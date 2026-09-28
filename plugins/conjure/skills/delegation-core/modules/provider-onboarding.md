@@ -8,7 +8,8 @@ estimated_tokens: 700
 
 # Getting Providers Answering
 
-Delegation is on by default, so an unconfigured machine is not broken.
+Delegation is off by default; opt in with `CONJURE_DELEGATION=on` or
+`"enabled": true` in the config. Once on, an unconfigured machine is not broken.
 It costs one availability probe per provider and then does the work
 locally.
 This module is for turning that fallback into an answer.

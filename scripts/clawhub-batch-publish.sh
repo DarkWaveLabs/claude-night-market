@@ -184,7 +184,7 @@ for slug in batch:
 
     try:
         result = subprocess.run(
-            ['npx', 'clawhub', 'publish', str(skill_dir),
+            ['npx', '--no-install', 'clawhub', 'publish', str(skill_dir),
              '--slug', slug,
              '--version', semver,
              '--tags', 'latest',

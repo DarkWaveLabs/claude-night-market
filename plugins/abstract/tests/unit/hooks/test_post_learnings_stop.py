@@ -86,6 +86,28 @@ class TestStdinHandling:
         _mod.main()  # should not raise
 
 
+class TestPostingOptIn:
+    """Feature: No GitHub writes without the auto_post_learnings opt-in."""
+
+    @pytest.mark.unit
+    def test_does_nothing_when_opted_out(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Scenario: opt-in is off
+        Given learnings exist but auto_post_learnings is False
+        When main() runs
+        Then no promote, post, or insight call is made.
+        """
+        calls: list[str] = []
+        monkeypatch.setattr("sys.stdin", io.StringIO(""))
+        monkeypatch.setattr(_mod, "_HAS_SCRIPTS", True)
+        monkeypatch.setattr(_mod, "_posting_enabled", lambda: False)
+        monkeypatch.setattr(_mod, "_learnings_have_content", lambda: True)
+        monkeypatch.setattr(_mod, "best_effort", lambda *a, **k: calls.append(a[1]))
+        _mod.main()
+        assert calls == []
+
+
 class TestLearningsContentCheck:
     """Feature: Skip posting when no content exists
 

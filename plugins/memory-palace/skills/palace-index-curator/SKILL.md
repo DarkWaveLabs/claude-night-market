@@ -97,7 +97,8 @@ CI so a bypassed hook does not land a backlog.
 Two things make that gate reachable rather than a standing block:
 
 - The capture write stages the index
-  (`hooks/shared/deduplication._stage_index`). Without it, pre-commit
+  (`hooks/shared/deduplication._stage_index`) when
+  `MEMORY_PALACE_STAGE_INDEX=1` is set. Without it, pre-commit
   reverts the unstaged write before any hook runs, so the drain reads a
   tree the fresh capture is missing from and converges on a fixed point
   that excludes exactly the entries it exists to process. That is how 47

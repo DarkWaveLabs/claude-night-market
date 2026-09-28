@@ -17,7 +17,7 @@ import anthropic
 
 from phantom.cost import CostTracker, estimate_screenshot_tokens
 from phantom.display import ActionResult, DisplayConfig, DisplayToolkit
-from phantom.safety import ActionFilter, ConfirmationGate, no_confirm
+from phantom.safety import ActionFilter, ConfirmationGate, default_confirm_callback
 from phantom.stuck import ScreenshotTracker, StuckPolicy
 
 logger = logging.getLogger(__name__)
@@ -236,7 +236,14 @@ def _run_tool_block(
             _error_tool_result(block.id, "Action blocked: restricted region"),
             False,
         )
-    if block.name == "computer" and not ctx.gate.check(block.input):
+    # Every tool goes through the gate: bash and the text editor act on the
+    # host at least as directly as a click does.
+    gate_input = (
+        block.input
+        if block.name == "computer"
+        else {"tool": block.name, **(block.input or {})}
+    )
+    if not ctx.gate.check(gate_input):
         result.actions_blocked += 1
         return (
             _error_tool_result(block.id, "Action rejected by confirmation gate"),
@@ -358,7 +365,9 @@ def run_loop(
     display = setup.toolkit or DisplayToolkit(config=d_config)
 
     action_filter = ActionFilter(blocked_regions=config.blocked_regions)
-    gate = ConfirmationGate(callback=hooks.confirm_callback or no_confirm)
+    gate = ConfirmationGate(
+        callback=hooks.confirm_callback or default_confirm_callback()
+    )
     screenshot_tracker = ScreenshotTracker()
     stuck_policy = StuckPolicy(max_stuck=config.max_stuck)
     cost_tracker = CostTracker(

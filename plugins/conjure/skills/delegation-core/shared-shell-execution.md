@@ -501,5 +501,5 @@ When the chain is exhausted, or when delegation is turned off,
 `result.fallback_reason` is set (`providers_exhausted` or
 `delegation_disabled`) and `result.attempts` names what each provider
 did.
-It does not raise: with delegation on by default, an operator who has
+It does not raise: an operator who opted in but has
 installed no CLI is the ordinary case rather than an error condition.

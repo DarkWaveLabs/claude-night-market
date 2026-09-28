@@ -213,15 +213,76 @@ class TestSafePatterns:
 
     @pytest.mark.bdd
     @pytest.mark.unit
-    def test_allows_help_flag(self) -> None:
-        """Scenario: Allow --help flag.
+    def test_does_not_allow_help_flag(self) -> None:
+        """Scenario: A trailing --help does not make a command safe.
 
-        Given a command with --help
+        Given 'pytest --help', which imports conftest.py before printing help
         When evaluating permission
-        Then it should be allowed.
+        Then it should fall through to the dialog.
         """
-        decision = check_safe("pytest --help")
-        assert decision is not None
+        assert check_safe("pytest --help") is None
+
+
+class TestExecutingArgumentBypasses:
+    """Feature: Safe-looking commands that execute or write are not approved.
+
+    Each case matched a SAFE_PATTERNS entry on its first token while
+    running code, deleting files, writing files, or printing secrets.
+    """
+
+    @pytest.mark.bdd
+    @pytest.mark.unit
+    @pytest.mark.parametrize(
+        "command",
+        [
+            'python3 -c "import os" -h',
+            "node payload.js --help",
+            "find ~ -name '*' -exec rm -rf {} +",
+            "find . -type f -delete",
+            "find . -name x -execdir sh {} +",
+            "find . -name x -fprint /tmp/out",
+            "cat notes.txt > ~/.zshrc",
+            "head -c0 /dev/null > important.txt",
+            "grep foo < /etc/passwd",
+            "rg --pre ./run.sh pattern",
+            "rg --pre=./run.sh pattern",
+            "ag --pager ./run.sh pattern",
+            "git log --output=/tmp/x",
+            "git diff --ext-diff",
+            "git show --textconv HEAD:file",
+            "git branch -D main",
+            "git branch -f main HEAD~3",
+            "man -P ./run.sh ls",
+            "env",
+            "printenv",
+            "printenv GITHUB_TOKEN",
+            "echo $ANTHROPIC_API_KEY",
+        ],
+    )
+    def test_not_auto_approved(self, command: str) -> None:
+        """Scenario: bypass command falls through to the dialog."""
+        assert check_safe(command) is None, f"{command!r} was auto-approved"
+
+    @pytest.mark.bdd
+    @pytest.mark.unit
+    @pytest.mark.parametrize(
+        "command",
+        [
+            "find . -name '*.py'",
+            "find src -type f",
+            "git branch",
+            "git branch -a",
+            "git branch --show-current",
+            "man ls",
+            "man 5 crontab",
+            "rg -n pattern src",
+            "grep -c foo file.txt",
+        ],
+    )
+    def test_read_only_forms_still_approved(self, command: str) -> None:
+        """Scenario: the read-only forms keep working."""
+        decision = check_safe(command)
+        assert decision is not None, f"{command!r} should be approved"
         assert decision.behavior == PermissionDecision.ALLOW
 
 
@@ -644,18 +705,16 @@ class TestEdgeCases:
 
     @pytest.mark.bdd
     @pytest.mark.unit
-    def test_allows_help_variations(self) -> None:
-        """Scenario: Allow various help flag formats.
+    def test_help_variations_show_dialog(self) -> None:
+        """Scenario: Help flags are not auto-approved.
 
         Given commands with -h or --help
         When evaluating permission
-        Then they should be allowed.
+        Then they should fall through to the dialog.
         """
         help_commands = ["docker --help", "git -h"]
         for cmd in help_commands:
-            decision = check_safe(cmd)
-            assert decision is not None, f"Expected {cmd} to be safe"
-            assert decision.behavior == PermissionDecision.ALLOW
+            assert check_safe(cmd) is None, f"Expected {cmd} to show dialog"
 
     @pytest.mark.bdd
     @pytest.mark.unit

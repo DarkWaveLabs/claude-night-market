@@ -759,8 +759,9 @@ class TestUpdateIndexStaging:
     ) -> None:
         """GIVEN an index inside a git repository
         WHEN update_index persists an entry
-        THEN the index is staged.
+        THEN the index is staged, when the maintainer opted in.
         """
+        monkeypatch.setenv(dedup_module.STAGE_INDEX_ENV, "1")
         repo = self._git_repo(tmp_path)
         index_path = repo / "memory-palace-index.yaml"
         monkeypatch.setattr(dedup_module, "_get_index_path", lambda: index_path)
@@ -773,6 +774,27 @@ class TestUpdateIndexStaging:
         )
 
         assert "memory-palace-index.yaml" in self._staged_paths(repo)
+
+    def test_write_does_not_stage_without_opt_in(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        """GIVEN an index inside a git repository and no opt-in
+        WHEN update_index persists an entry
+        THEN nothing is staged in the user's repository.
+        """
+        monkeypatch.delenv(dedup_module.STAGE_INDEX_ENV, raising=False)
+        repo = self._git_repo(tmp_path)
+        index_path = repo / "memory-palace-index.yaml"
+        monkeypatch.setattr(dedup_module, "_get_index_path", lambda: index_path)
+
+        update_index(
+            content_hash="sha256:unstaged",
+            stored_at="data/staging/capture.md",
+            importance_score=50,
+            url="https://example.com/unstaged",
+        )
+
+        assert self._staged_paths(repo) == set()
 
     def test_write_outside_a_repository_still_persists(
         self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
@@ -852,6 +874,7 @@ class TestStagingBudget:
             return _Completed()
 
         monkeypatch.setattr(dedup_module.subprocess, "run", fake_run)
+        monkeypatch.setenv(dedup_module.STAGE_INDEX_ENV, "1")
         index_path = tmp_path / "index.yaml"
         index_path.write_text("{}")
         dedup_module._stage_index(index_path)

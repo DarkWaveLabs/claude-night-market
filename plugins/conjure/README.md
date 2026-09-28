@@ -37,45 +37,12 @@ For accurate token counts, install tiktoken:
 pip install tiktoken
 ```
 
-### Why delegation is on by default
+### Why delegation is off by default
 
-It was opt-in until the provider chain landed, under
-[docs/inclusive-defaults.md][inc] TRUE-exception category
-3: the external CLIs (`gemini`, `qwen`, `mmx`, `muse`,
-`codex`, `opencode`, `claude`, `ollama`) are separately
-installed and authenticated, and `smart_delegate` raised
-when none of them was. Defaulting on would have failed
-every task on an unconfigured machine.
-
-The chain removed that failure. An unconfigured machine
-now costs one availability probe per provider and gets a
-`providers_exhausted` result, which the caller reads as
-"do this work yourself". The reasonable default the
-category asked for exists, and it is "try, then do it
-yourself".
-
-`Skill(conjure:provider-setup)` is how an operator stops
-paying that cost. It prints which CLIs are installed and
-authenticated, explains each unhealthy one, installs the
-missing ones after confirmation, and stores the result at
-`~/.claude/hooks/delegation/provider-state.json`:
-
-```bash
-python3 scripts/delegation_setup.py --available
-python3 scripts/delegation_setup.py --doctor
-python3 scripts/delegation_setup.py --install gemini
-```
-
-Two switches decline it, environment over file:
-
-| Scope | How |
-|-------|-----|
-| One run | `CONJURE_DELEGATION=off` |
-| One machine | `"enabled": false` in `~/.claude/hooks/delegation/config.json` |
-
-A disabled delegator probes and spawns nothing.
-
-[inc]: ../../docs/inclusive-defaults.md
+Delegation sends prompts and up to 96 KiB of inlined source to
+third-party LLM CLIs. That must be a deliberate choice, so it is
+opt-in: set `CONJURE_DELEGATION=on` for one run or `"enabled": true`
+in `~/.claude/hooks/delegation/config.json` for one machine.
 
 ## Usage
 

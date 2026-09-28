@@ -1759,28 +1759,35 @@ class TestMissingContextIsDroppedWithoutASignal:
         assert len(delivered) < MAX_ARG_STRLEN
 
 
-class TestDelegationIsOnUnlessRefused:
-    """Delegation runs by default, and every way out of it is explicit.
+@pytest.mark.delegation_policy
+class TestDelegationIsOffUnlessOptedIn:
+    """Delegation is opt-in: it ships prompts and files to third parties.
 
-    The opt-in framing put the burden on the caller to remember an
-    external CLI existed. These tests pin the inverted default: a caller
-    that says nothing gets delegation, and the two ways to decline it
-    both leave a reason a reader can act on.
+    A caller that says nothing gets no delegation, and every refusal
+    leaves a reason a reader can act on.
     """
 
     @pytest.mark.bdd
-    def test_an_operator_who_configured_nothing_gets_delegation(
+    def test_an_operator_who_configured_nothing_gets_no_delegation(
         self, temp_config_dir
     ) -> None:
         """GIVEN no config file and no environment variable.
 
         WHEN the delegator reports its policy
-        THEN delegation is on
-
-        This is the whole inversion in one assertion. Under the previous
-        framing there was no policy to read at all, which is what made
-        delegation opt-in: it happened only where a caller spelled it out.
+        THEN delegation is off and says how to opt in
         """
+        delegator = Delegator(config_dir=temp_config_dir)
+
+        assert delegator.delegation_enabled is False
+        assert "off by default" in delegator.delegation_off_reason
+
+    @pytest.mark.bdd
+    def test_a_config_file_can_opt_a_machine_in(self, temp_config_dir) -> None:
+        """GIVEN a config file declaring ``"enabled": true``.
+
+        THEN delegation is on
+        """
+        (temp_config_dir / "config.json").write_text('{"enabled": true}')
         delegator = Delegator(config_dir=temp_config_dir)
 
         assert delegator.delegation_enabled is True
@@ -1849,8 +1856,10 @@ class TestDelegationIsOnUnlessRefused:
 
         delegator = Delegator(config_dir=temp_config_dir)
 
-        assert delegator.delegation_enabled is True
-        assert delegator.delegation_off_reason is None
+        assert delegator.delegation_enabled is False
+        assert "off by default" in delegator.delegation_off_reason
+
+
 
     @pytest.mark.bdd
     @pytest.mark.parametrize("value", ["off", "0", "false", "no", "OFF"])

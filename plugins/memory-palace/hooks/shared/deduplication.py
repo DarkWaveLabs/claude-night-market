@@ -358,6 +358,10 @@ def update_index(  # noqa: PLR0913 - index entries have many metadata fields
     _index_mtime = index_path.stat().st_mtime
 
 
+#: Set to "1" to ``git add`` the index after each capture.
+STAGE_INDEX_ENV = "MEMORY_PALACE_STAGE_INDEX"
+
+
 def _stage_index(index_path: Path) -> None:
     """Stage the index so the pre-commit drain can see this capture.
 
@@ -374,7 +378,14 @@ def _stage_index(index_path: Path) -> None:
     holds the index lock. None of them are worth taking a WebFetch down
     over, and none of them lose data, because the write already
     completed.
+
+    Opt-in via ``MEMORY_PALACE_STAGE_INDEX=1``. The pre-commit drain is
+    this repository's own maintainer workflow; for anyone else the index
+    can sit inside a project repo, and staging it would slip captured URLs
+    and titles into their next commit.
     """
+    if os.environ.get(STAGE_INDEX_ENV, "") != "1":
+        return
     with contextlib.suppress(OSError, subprocess.SubprocessError):
         subprocess.run(
             ["git", "add", "--", str(index_path)],

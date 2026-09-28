@@ -160,6 +160,7 @@ addopts = [
     "--cov-report=html",
 ]
 markers = [
+    "delegation_policy: test sees a clean CONJURE_DELEGATION environment",
     "unit: Unit tests for individual components",
     "integration: Integration tests for workflow orchestration",
     "slow: Slow running tests",

@@ -14,6 +14,8 @@ and region-based blocking to prevent clicking sensitive UI areas.
 
 from __future__ import annotations
 
+import os
+import sys
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
 from typing import Any
@@ -80,6 +82,42 @@ def approve_clicks_only(action: dict[str, Any]) -> bool:
 # Backwards-compatible alias. Misnamed: this does NOT confirm clicks;
 # it returns True for all clicks too. See module-level warning (B-03).
 confirm_clicks_only = approve_clicks_only
+
+
+#: Computer-tool actions that only observe the screen. Everything else
+#: (clicks, typing, key presses, bash, file edits) is a side effect.
+READ_ONLY_ACTIONS = frozenset({"screenshot", "cursor_position", "wait", "zoom"})
+
+#: Set to "1" to run without prompts. Meant for the provided Docker
+#: container, where the loop cannot reach the host.
+UNATTENDED_ENV = "PHANTOM_UNATTENDED"
+
+
+def terminal_confirm(action: dict[str, Any]) -> bool:
+    """Ask on the controlling terminal before any side-effecting action.
+
+    Read-only screen actions pass. With no terminal to ask on, the action
+    is rejected: an unattended run has to opt in via ``PHANTOM_UNATTENDED``.
+    """
+    if action.get("tool", "computer") == "computer" and (
+        action.get("action") in READ_ONLY_ACTIONS
+    ):
+        return True
+    if not sys.stdin.isatty():
+        return False
+    shown = {k: v for k, v in action.items() if k != "text" or len(str(v)) < 200}
+    try:
+        reply = input(f"phantom wants to run {shown!r}. Allow? [y/N] ")
+    except EOFError:
+        return False
+    return reply.strip().lower() in {"y", "yes"}
+
+
+def default_confirm_callback() -> ConfirmCallback:
+    """Pick the loop's gate: prompt by default, no gate only on opt-in."""
+    if os.environ.get(UNATTENDED_ENV, "") == "1":
+        return no_confirm
+    return terminal_confirm
 
 
 @dataclass

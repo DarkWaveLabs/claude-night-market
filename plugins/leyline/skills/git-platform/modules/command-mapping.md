@@ -251,7 +251,7 @@ mutation($discussionId: ID!, $body: String!) {
 
 #### List Recent Discussions by Category
 
-Bounded query for listing recent discussions. The `fetch-recent-discussions.sh` SessionStart hook uses `first: 5` for token budget compliance; adjust the limit as needed for other use cases:
+Bounded query for listing recent discussions. Use a small `first:` value such as 5 for token budget compliance; adjust the limit as needed for other use cases:
 
 ```bash
 gh api graphql -f query='

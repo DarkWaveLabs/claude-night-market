@@ -2,6 +2,8 @@ FROM ubuntu:22.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV DISPLAY=:1
+# The container is the sandbox, so the loop runs without per-action prompts.
+ENV PHANTOM_UNATTENDED=1
 
 # Install display tools and a lightweight desktop
 RUN apt-get update && apt-get install -y --no-install-recommends \

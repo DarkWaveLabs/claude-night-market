@@ -63,6 +63,10 @@ MAX_CONTINUATIONS = 10
 #: a typo can never silently disable the runaway-loop guard.
 MAX_CONTINUATIONS_ENV = "DOUBLE_SHOT_LATTE_MAX_CONTINUATIONS"
 
+#: Environment variable that turns the judge on. Unset means every stop is
+#: allowed without reading the transcript.
+ENABLE_ENV = "DOUBLE_SHOT_LATTE"
+
 #: Sliding window, in seconds, over which MAX_CONTINUATIONS is counted.
 THROTTLE_WINDOW_SECONDS = 300
 
@@ -477,6 +481,12 @@ def main() -> None:
             event = {}
     except (json.JSONDecodeError, ValueError):
         event = {}
+
+    if os.environ.get(ENABLE_ENV, "") != "1":
+        # Off unless opted in: installing herald for notifications should not
+        # also change when Claude is allowed to stop.
+        print(json.dumps(_approve(f"disabled; set {ENABLE_ENV}=1 to enable.")))
+        sys.exit(0)
 
     try:
         decision = decide(event, time.time())

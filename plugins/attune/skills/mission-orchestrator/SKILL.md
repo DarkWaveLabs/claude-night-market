@@ -143,9 +143,9 @@ The orchestrator **never** re-implements phase logic. Each phase is a complete `
 
 ## Delegation During a Mission
 
-Missions delegate execution by default.
+Missions delegate execution only when delegation is opted in.
 `Skill(conjure:delegation-core)` governs the decision, and its default
-posture is on: a phase that reaches execution work hands it to an
+posture is off. Once on, a phase that reaches execution work hands it to an
 external CLI without waiting to be asked.
 
 | Phase | Delegates | Why |

@@ -4,7 +4,7 @@
   if (mermaidBlocks.length === 0) return;
 
   var script = document.createElement('script');
-  script.src = 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js';
+  script.src = 'https://cdn.jsdelivr.net/npm/mermaid@11.17.2/dist/mermaid.min.js';
   script.onload = function() {
     mermaid.initialize({ startOnLoad: false, theme: 'default' });
 

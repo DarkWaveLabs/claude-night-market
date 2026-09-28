@@ -44,7 +44,7 @@ EXPERT_CONFIGS = {
         "model": "glm-5.2",
         "command_resolver": "get_glm_command",
         "preferred_alias": "ccgd",
-        "fallback_command": ["claude-glm", "--dangerously-skip-permissions", "-p"],
+        "fallback_command": ["claude-glm", "-p"],
         "description": "Implementation feasibility assessment",
         "phases": ["coa_development"],
         "dangerous": True,
@@ -158,7 +158,7 @@ def get_glm_command() -> list[str]:
 
     Priority:
     1. ccgd (alias) - if available in PATH
-    2. claude-glm --dangerously-skip-permissions - explicit fallback
+    2. claude-glm - explicit fallback (normal permission prompts)
     3. ~/.local/bin/claude-glm - direct path fallback
     """
     import shutil
@@ -170,16 +170,16 @@ def get_glm_command() -> list[str]:
 
     # Check for script in PATH
     if shutil.which("claude-glm"):
-        return ["claude-glm", "--dangerously-skip-permissions", "-p"]
+        return ["claude-glm", "-p"]
 
     # Direct path fallback
     local_bin = Path.home() / ".local" / "bin" / "claude-glm"
     if local_bin.exists():
-        return [str(local_bin), "--dangerously-skip-permissions", "-p"]
+        return [str(local_bin), "-p"]
 
     raise RuntimeError(
         "GLM-5.2 not available. Install claude-glm or configure ccgd alias.\n"
-        "Add to ~/.bashrc: alias ccgd='claude-glm --dangerously-skip-permissions'"
+        "Add to ~/.bashrc: alias ccgd='claude-glm'"
     )
 ```
 

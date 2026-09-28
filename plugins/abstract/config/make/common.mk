@@ -35,7 +35,7 @@ UV ?= uv
 # help, clean and status need neither tool, so skip the probes for them.
 ifneq ($(filter-out help clean status,$(MAKECMDGOALS)),)
 ifeq ($(shell command -v $(UV) 2>/dev/null),)
-$(error uv is required but not installed. Install via: curl -LsSf https://astral.sh/uv/install.sh | sh)
+$(error uv is required but not installed. Install via: brew install uv (or pipx install uv))
 endif
 
 ifeq ($(shell command -v $(PYTHON) 2>/dev/null),)

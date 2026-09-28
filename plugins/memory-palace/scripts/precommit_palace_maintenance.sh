@@ -20,7 +20,8 @@
 # The drain then has to have worked, so the hook ends on a gate: zero
 # pending entries in the index the commit carries, or the commit is
 # blocked. Fresh captures reach that drain because the capture write
-# stages the index (`shared/deduplication._stage_index`); without that,
+# stages the index (`shared/deduplication._stage_index`, opt-in via
+# MEMORY_PALACE_STAGE_INDEX=1); without that,
 # pre-commit reverts the unstaged write before this hook runs and the
 # drain converges on a tree the capture is missing from.
 

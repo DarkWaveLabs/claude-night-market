@@ -52,7 +52,9 @@ network providers ahead of it.
 ### Installation
 
 ```bash
-curl -fsSL https://ollama.com/install.sh | sh
+curl -fsSL -o ollama-install.sh https://ollama.com/install.sh
+less ollama-install.sh   # review before running
+sh ollama-install.sh
 ollama pull muse-glimmer:30b
 ```
 

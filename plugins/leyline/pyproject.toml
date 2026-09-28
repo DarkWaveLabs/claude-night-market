@@ -56,7 +56,6 @@ extend-ignore = [
 [tool.ruff.lint.extend-per-file-ignores]
 "**/__init__.py" = ["F401"]
 "tests/**/*.py" = ["S101", "PLR2004", "D102", "D103", "D205", "D400", "D415", "I001"]
-"tests/test_auto_star_repo.py" = ["D101", "D212", "E501"]
 "tests/test_manifest_consistency.py" = ["D101", "D212", "E501"]
 "hooks/**/*.py" = ["BLE001", "S110"]
 "scripts/**/*.py" = ["UP045"]
